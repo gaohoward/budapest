@@ -1,2 +1,2 @@
 # budapest
-An opensource tool to monitor and manage Artemis JMS broker
+Budapest is an open source tool to backup, recover and restore Artemis data journals.
