@@ -29,8 +29,18 @@ import java.util.Properties;
 
 public final class SetupManager {
 
+    /**
+     * The main utility class consisting necessary methods to support the tool.
+     *
+     */
     private SetupManager(){}
 
+
+    /**
+     * Prase the budapest.properties configuration file to return a value to the matching 'key'
+     * @param key
+     * @return
+     */
     public static String getProperty(String key) {
         Properties properties =  new Properties();
         try( FileReader fileReader = new FileReader("budapest.properties") ){
