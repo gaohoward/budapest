@@ -1,0 +1,92 @@
+<html>
+<head>
+<title>Welcome</title>
+</head>
+<body>
+<h1>How to Use Artemis Budapest</h1>
+
+<h3>
+<li>Introduction</li>
+<p>This tool is used to browse various data files of an Artemis broker
+in order to find useful informations, as in debugging for example.</p>
+
+<p>For information about Artemis please go to the <a href="https://activemq.apache.org/components/artemis/">
+    Artemis Website (https://activemq.apache.org/components/artemis/)
+</a>.</p>
+<p>This GUI tool can handle hugh dat files without consuming much of the memory.
+It loads and displays log entries in page mode, each time only one page is loaded.
+It groups data files into projects so it can be viewed, analyzed with a clear
+structure.</p><br/>
+
+<li>Getting Started</li>
+<p>First you need to create a project: </p>
+
+<p>Then open the project </p>
+
+<li>Analyzing the data</li>
+<p>On the right pane above the log entries there is a toolbar that provides tools
+for analyzing the log.</p>
+
+<p>The text field is for you to input some expressions that are used together with
+the buttons to its right.</p><br/>
+
+<li>The <b>&lt&ndash</b> and <b>-></b> buttons</li>
+
+<p>They can locate a record entry based on what you input in the text field. When
+you press either button, it searches each line and try to find if it contains
+the string in the text field. Based on which button you pressed, it searches forward
+("->") or backward ("&lt&ndash").</p><br/>
+
+<li>The <b>"R"</b> button</li>
+
+<p>The R button will created a filtered data file from the project based on the 
+expression you input in the text field. The expression can be </p>
+
+a simple word, for example <b>error</b>, or<br>
+an 'and' expression, for example <b>error & warn</b>, or<br>
+an 'or' expression, for example <b>error | warn</b>, or<br>
+a 'not' expression, for example <b>!error</b>, or <br>
+a combination of above, for example <b>error & warn & !jboss</b><br>
+
+<p>spaces are ignored. The precedence of operators are <br>
+! > & > | <br>
+however you can use braces "()" to change it.</p>
+
+<p>
+By default all filtering are NOT case sensitive. If you need case-sensitive
+matching, use <b>-m</b> switch, like<br>
+<b>-m ERROR & warn | Exception<b><br>
+</p>
+
+<p>
+To use special characters like & or | in expressions, you need to escape it
+with backslash, example:
+<b>Exception\&error<b><br>
+it will match record lines who contain "Exception&error" (case insensitive).
+</p>
+
+<br/>
+<li>The <b>"X"</b> buttons</li>
+
+<p>The X button, when pressed, will filter the target records with
+java regular expressions. Any value in the text field will be taken
+and interpreted as Java Regular Expression. The filtered records
+contains entries from the targe log that has a match to the regular expression.</p><br>
+
+<br/>
+<li>The <b>"&lt"</b> and <b>">"</b> buttons</li>
+<p>The two buttons are used to turn pages.</p><br>
+
+<li>The Goto button (<b>G</b>)</li>
+<p>The last button is goto button. It allows you to go to a specific line
+by its line number.</p>
+<br/>
+<b>note:</b> to go to the last line, input -1.<br/>
+
+<br/>
+</h3>
+
+<h3>Enjoy!<br><br></h3>
+
+</body>
+</html>

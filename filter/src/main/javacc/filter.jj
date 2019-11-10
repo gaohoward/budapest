@@ -1,0 +1,253 @@
+/* filter.jj */
+
+options {
+  STATIC = false;
+}
+
+PARSER_BEGIN(LogFilter)
+  package org.apache.activemq.artemis.budapest.filter;
+  public class LogFilter {
+    public static final byte NOT_MATCH = 0;
+    public static final byte MATCH = 1;
+    //in cut line mode this gives a hint to stop iterating.
+    public static final byte OUT_OF_SCOPE = 2;
+    
+    private boolean ignore_case = true;
+    private CMD cmd = CMD.FILTERING;
+    private long start = 0;
+    private long end = Long.MAX_VALUE;
+
+    public CMD getMode() throws ParseException
+    {
+      readMode();
+      return cmd;
+    }
+    
+    int evaluate(String logLine, LogContext context) throws ParseException
+    {
+      readMode();
+      if (cmd == CMD.FILTERING)
+      {
+        return expression(logLine) ? MATCH : NOT_MATCH;
+      }
+      if (cmd == CMD.CUT_LINE)
+      {
+        return cut_line(logLine, context);
+      }
+      throw new ParseException("unknown cmd: " + cmd);
+    }
+
+    private boolean isMatch(String logLine, String filter)
+    {
+      String realLine = logLine;
+      String realFilter = filter;
+
+      if (ignore_case)
+      {
+        realLine = logLine.toLowerCase();
+        realFilter = filter.toLowerCase();
+      }
+
+      if (realLine.contains(realFilter))
+      {
+        return true;
+      }
+      return false;
+    }
+        
+    private String norm(String rawValue)
+    {
+      if (rawValue.indexOf("\\") == -1)
+      {
+        return rawValue;
+      }
+      String normalized = rawValue;
+      if (normalized.contains("\\&"))
+      {
+        normalized = normalized.replace("\\&", "&");
+      }
+      if (normalized.contains("\\|"))
+      {
+        normalized = normalized.replace("\\|", "|");
+      }
+      if (normalized.contains("\\("))
+      {
+        normalized = normalized.replace("\\(", "(");
+      }
+      if (normalized.contains("\\)"))
+      {
+        normalized = normalized.replace("\\)", ")");
+      }
+      if (normalized.contains("\\!"))
+      {
+        normalized = normalized.replace("\\!", "!");
+      }
+      if (normalized.contains("\\ "))
+      {
+        normalized = normalized.replace("\\ ", " ");
+      }
+      if (normalized.contains("\\\\"))
+      {
+        normalized = normalized.replace("\\\\", "\\");
+      }
+      return normalized;
+    }
+
+    public static enum CMD
+    {
+      CUT_LINE,
+      FILTERING
+    }
+  }
+PARSER_END(LogFilter)
+
+SKIP: { "\n" | "\r" | "\t" | " " }
+
+TOKEN:
+{
+  <MATCH_CASE :("-m")> |
+  <CUT_LINE :"-cut">
+}
+
+TOKEN:
+{
+  <#SPECL_CHR :"\\"["&", "|", "(", ")", "!", " ", "\\"]> |
+  <LBR :("(")> | <RBR :(")")> |
+  <KEYSTR :(["a"-"z", "A"-"Z", "0"-"9", "\"", "?", "'", "[", "]", "-", "+", "*", "_", "=", "/", "%", "$", "#", "@", "~", ".", ">", "<", ";", ":", ","]|<SPECL_CHR>)+> |
+  <OPNOT :"!"> | <OPAND :"&"> | <OPOR :"|">
+}
+
+void readMode() throws ParseException :
+{
+  org.apache.activemq.artemis.budapest.filter.Token t;
+}
+{
+  (
+    t = <MATCH_CASE>
+    {
+      ignore_case = false;
+    }
+    |
+    <CUT_LINE>
+    {
+      cmd = CMD.CUT_LINE;
+    }
+  )?
+}
+
+long[] parseStartStop() throws ParseException :
+{
+  Token t;
+  long[] result = new long[]{0, Long.MAX_VALUE};
+}
+{
+    t = <KEYSTR>
+    {
+      result[0] = Long.valueOf(t.image);
+    }
+    (
+      t = <KEYSTR>
+      {
+        result[1] = Long.valueOf(t.image);
+      }
+    )?
+    {
+      return result;
+    }
+}
+
+int cut_line(String logLine, LogContext context) throws ParseException :
+{
+  Token t;
+  long start = 0;
+  long end = Long.MAX_VALUE;
+  int result = MATCH;
+}
+{
+    t = <KEYSTR>
+    {
+      start = Long.valueOf(t.image);
+    }
+    (
+      t = <KEYSTR>
+      {
+        end = Long.valueOf(t.image);
+      }
+    )?
+    {
+      if (context.getCurrentLn() < start)
+      {
+        result = NOT_MATCH;
+      }
+      else if (context.getCurrentLn() > end)
+      {
+        result = OUT_OF_SCOPE;
+      }
+      return result;
+    }
+}
+      
+
+boolean primary(String logLine) throws ParseException :
+{
+  Token t;
+  boolean result;
+}
+{
+    t = <KEYSTR>
+    {
+      result = isMatch(logLine, norm(t.image));
+      return result;
+    }
+  |
+    <LBR> result = expression(logLine) <RBR>
+    {
+      return result;
+    }
+  |
+    <OPNOT> result = primary(logLine)
+    {
+      return !result;
+    }
+}
+
+boolean andTerm(String logLine) throws ParseException :
+{
+  boolean result1;
+  boolean result2;
+}
+{
+  result1 = primary(logLine)
+  (
+    <OPAND>
+    result2 = primary(logLine)
+    {
+      result1 = result1 && result2;
+    }
+  )*
+  {
+    return result1;
+  }
+}
+
+boolean expression(String logLine) throws ParseException :
+{
+  boolean result1;
+  boolean result2;
+}
+{
+  result1 = andTerm(logLine)
+  (
+    <OPOR>
+    result2 = andTerm(logLine)
+    {
+      result1 = result1 || result2;
+    }
+  )*
+  {
+    return result1;
+  }
+  <EOF>
+}
+
+
