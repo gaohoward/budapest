@@ -47,6 +47,11 @@ public class JournalDataDecoder implements JournalRecordDecoder<JournalDataRecor
             type = stream.readByte();
          }
          JournalDataRecord record = createRecord(type, currentFile, position);
+         //if record is corrupted it throws exception
+         //and decoding will be stopped.
+         //can we try to be smart to find a position
+         //to skip the bad record and go on to recover
+         //the rest of the journal?
          record.decode(stream);
          return record;
       } catch (EOFException eof) {
