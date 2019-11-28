@@ -133,7 +133,7 @@ public class DataProjectManagementView implements WorkspaceEventListener, EventM
                {
                   current = (AbstractProject)data;
                   instance.broadcast(new UserEvent(this, UserEvent.PROJ_SELECTED, data));
-                  if (e.getClickCount() == 2)
+                  if (e.getClickCount() > 0)
                   {
                      //double click
                      tryOpenProject(current);
@@ -158,6 +158,9 @@ public class DataProjectManagementView implements WorkspaceEventListener, EventM
                   if (data instanceof AbstractProject)
                   {
                      AbstractProject toDel = (AbstractProject)data;
+                     if (toDel.isReadOnly()) {
+                        return;
+                     }
                      try
                      {
                         treeModel.removeNodeFromParent(selected);
@@ -254,6 +257,20 @@ public class DataProjectManagementView implements WorkspaceEventListener, EventM
          DataRecord rec = (DataRecord) event.getEventData();
          instance.broadcast(new UserEvent(this, UserEvent.GOTO_PARENT_LINE, rec));
          rec.setLineNumber(rec.getParentLineNumber());
+      }
+      else if (event.getEventType() == UserEvent.TO_PROJECT)
+      {
+         AbstractProject proj = (AbstractProject) event.getEventData();
+         if (current != proj)
+         {
+            current = proj;
+            DefaultMutableTreeNode node = findParent((DefaultMutableTreeNode)treeModel.getRoot(), proj);
+
+            TreeNode[] nodes = treeModel.getPathToRoot(node);
+            logProjectTree.setSelectionPath(new TreePath(nodes));
+            updateLogList();
+            instance.broadcast(new UserEvent(this, UserEvent.PROJ_SELECTED, proj));
+         }
       }
    }
 
@@ -369,16 +386,23 @@ public class DataProjectManagementView implements WorkspaceEventListener, EventM
          if (data instanceof AbstractProject)
          {
             AbstractProject selected = (AbstractProject) data;
-            if (selected.supportIteration() && !selected.isOpened())
+            if (selected.supportIteration())
             {
-               JMenuItem openItem = new JMenuItem("Open");
-               openItem.addActionListener(new ActionListener() {
-                  public void actionPerformed(ActionEvent e)
-                  {
-                     tryOpenProject(selected);
-                  }
-               });
-               popupMenu.add(openItem);
+               if (!selected.isOpened())
+               {
+                  JMenuItem openItem = new JMenuItem("Open");
+                  openItem.addActionListener(new ActionListener() {
+                     public void actionPerformed(ActionEvent e)
+                     {
+                        tryOpenProject(selected);
+                     }
+                  });
+                  popupMenu.add(openItem);
+               }
+               else
+               {
+                  //
+               }
             }
          }
       }
@@ -389,7 +413,7 @@ public class DataProjectManagementView implements WorkspaceEventListener, EventM
       popupMenu.show(e.getComponent(), e.getX(), e.getY());
    }
 
-   private void deleteProject(AbstractProject proj) throws IOException
+   private void deleteProject(AbstractProject proj) throws Exception
    {
       logger.info("**** delete project: " + proj);
       proj.delete();

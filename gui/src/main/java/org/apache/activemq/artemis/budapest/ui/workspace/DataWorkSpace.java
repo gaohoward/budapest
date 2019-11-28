@@ -14,10 +14,14 @@ import java.util.Map;
 import org.apache.activemq.artemis.budapest.config.ConfigHelper;
 import org.apache.activemq.artemis.budapest.project.AbstractProject;
 import org.apache.activemq.artemis.budapest.project.FilterString;
+import org.apache.activemq.artemis.budapest.project.bin.BinaryLogProject;
 import org.apache.activemq.artemis.budapest.project.internal.ArtemisDataProject;
 import org.apache.activemq.artemis.budapest.project.internal.BindingsProject;
+import org.apache.activemq.artemis.budapest.project.internal.CoreBindingsProject;
+import org.apache.activemq.artemis.budapest.project.internal.JmsBindingsProject;
 import org.apache.activemq.artemis.budapest.project.internal.JournalProject;
 import org.apache.activemq.artemis.budapest.project.internal.LargeMessageProject;
+import org.apache.activemq.artemis.budapest.project.internal.PageLogProject;
 import org.apache.activemq.artemis.budapest.project.internal.PagingProject;
 import org.apache.activemq.artemis.budapest.project.plain.PlainLogProject;
 import org.apache.activemq.artemis.budapest.ui.instance.MainInstance;
@@ -38,6 +42,10 @@ public class DataWorkSpace
    public static final String TYPE_PAGING = "4";
    public static final String TYPE_LARGEMESSAGES = "5";
    public static final String TYPE_PLAIN_LOG = "6";
+   public static final String TYPE_BINARY_LOG = "7";
+   public static final String TYPE_BINDINGS_CORE = "8";
+   public static final String TYPE_BINDINGS_JMS = "9";
+   public static final String TYPE_PAGE_LOG = "10";
 
    private MainInstance instance;
    private File baseDir;
@@ -93,7 +101,7 @@ public class DataWorkSpace
       return dataProjects.size() == 0;
    }
 
-   public void deleteProject(AbstractProject proj) throws IOException
+   public void deleteProject(AbstractProject proj) throws Exception
    {
       AbstractProject toRemove = dataProjects.remove(proj.getID());
       if (toRemove != null)
@@ -116,6 +124,10 @@ public class DataWorkSpace
    public DefaultTreeModel getWorkspaceTreeModel()
    {
       return treeModel;
+   }
+
+   public MainInstance getInstance() {
+      return instance;
    }
 
    private class WorkspaceTreeModel extends DefaultTreeModel
@@ -218,7 +230,7 @@ public class DataWorkSpace
 
    public JournalProject createJournalProject(ArtemisDataProject parent, File file)
    {
-      JournalProject proj = new JournalProject(parent, this, file);
+      JournalProject proj = new JournalProject(parent, this, file, null);
       afterCreation(proj);
       return proj;
    }
@@ -266,7 +278,7 @@ public class DataWorkSpace
       else if (TYPE_JOURNAL.equals(projectType))
       {
          //ignore proj name which is fixed
-         proj = new JournalProject(null, this, new File(projectElement.getAttribute(ConfigHelper.KEY_BASEDIR)));
+         proj = new JournalProject(null, this, new File(projectElement.getAttribute(ConfigHelper.KEY_BASEDIR)), projID);
       }
       else if (TYPE_BINDINGS.equals(projectType))
       {
@@ -285,17 +297,60 @@ public class DataWorkSpace
          proj = new PlainLogProject(null, projectName, this, projID, Integer.valueOf(projectElement.getAttribute(ConfigHelper.KEY_FILTER_TYPE)),
                   projectElement.getAttribute(ConfigHelper.KEY_FILTER_VALUE));
       }
+      else if (TYPE_BINARY_LOG.equals(projectType))
+      {
+         proj = new BinaryLogProject(null, projectName, this, projID, new File(projectElement.getAttribute(ConfigHelper.KEY_FILE)));
+      }
+      else if (TYPE_BINDINGS_CORE.equals(projectType))
+      {
+         proj = new CoreBindingsProject(null, this, projID, new File(projectElement.getAttribute(ConfigHelper.KEY_BASEDIR)));
+      }
+      else if (TYPE_BINDINGS_JMS.equals(projectType))
+      {
+         proj = new JmsBindingsProject(null, this, projID, new File(projectElement.getAttribute(ConfigHelper.KEY_BASEDIR)));
+      }
+      else if (TYPE_PAGE_LOG.equals(projectType))
+      {
+         proj = new PageLogProject(null, projectName, this, projID, new File(projectElement.getAttribute(ConfigHelper.KEY_BASEDIR)));
+      }
       else
       {
          throw new RuntimeException("Unknown project type: " + projectType);
       }
-      proj.setID(projID);
+      proj.setID(projID); //redundant??
       return proj;
    }
 
    public PlainLogProject createPlainLogProject(AbstractProject parent, FilterString filter)
    {
       PlainLogProject proj = new PlainLogProject(parent, this, filter, null);
+      afterCreation(proj);
+      return proj;
+   }
+   public BinaryLogProject createBinaryLogProject(AbstractProject parent, File file)
+   {
+      BinaryLogProject proj = new BinaryLogProject(parent, this, file);
+      afterCreation(proj);
+      return proj;
+   }
+
+   public CoreBindingsProject createCoreBindingsProject(BindingsProject parent, File file)
+   {
+      CoreBindingsProject proj = new CoreBindingsProject(parent, this, file);
+      afterCreation(proj);
+      return proj;
+   }
+
+   public JmsBindingsProject createJmsBindingsProject(BindingsProject parent, File file)
+   {
+      JmsBindingsProject proj = new JmsBindingsProject(parent, this, file);
+      afterCreation(proj);
+      return proj;
+   }
+
+   public PageLogProject createPageLogProject(PagingProject parent, File file)
+   {
+      PageLogProject proj = new PageLogProject(parent, this, file);
       afterCreation(proj);
       return proj;
    }

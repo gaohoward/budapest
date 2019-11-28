@@ -38,7 +38,7 @@ public class PlainLogProject extends AbstractProject
 
    public PlainLogProject(AbstractProject parent, DataWorkSpace workspace, FilterString filter, String id)
    {
-      super(parent, filter.getName(), workspace, id == null ? GeneralUtil.getTimeID() : id);
+      super(parent, filter.getName(), workspace, id == null ? GeneralUtil.getTimeID() : id, false);
       this.filter = filter;
       this.state = new ProjectState();
       File file = new File(workspace.getBaseDir(), getID());
@@ -311,6 +311,16 @@ public class PlainLogProject extends AbstractProject
       DefaultMutableTreeNode child = new DefaultMutableTreeNode(logFile);
       logTreeModel.insertNodeInto(child, rootNode, rootNode.getChildCount());
       return logTreeModel;
+   }
+
+   @Override
+   public void doDelete() throws Exception
+   {
+      super.doDelete();
+      if (this.logFile != null)
+      {
+         this.logFile.delete();
+      }
    }
 
 }

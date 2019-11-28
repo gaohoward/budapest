@@ -18,10 +18,15 @@ public class JournalProject extends BaseDataProject
 
    private DefaultTreeModel dataTreeModel;
 
-   public JournalProject(ArtemisDataProject parent, DataWorkSpace workspace, File dataDir)
+   public JournalProject(BaseDataProject parent, DataWorkSpace workspace, File dataDir, String projName, String projID)
    {
-      super(parent, "Journal", workspace, dataDir);
+      super(parent, projName, workspace, dataDir, projID, true);
       this.dataTreeModel = new DefaultTreeModel(new DefaultMutableTreeNode(this));
+   }
+
+   public JournalProject(BaseDataProject parent, DataWorkSpace workspace, File dataDir, String projID)
+   {
+      this(parent, workspace, dataDir, "Journal", projID);
    }
 
    public JournalIterator<JournalDataRecord> iterator() throws IOException
@@ -29,11 +34,6 @@ public class JournalProject extends BaseDataProject
       if (!opened) throw new IllegalStateException("Project not opened yet.");
       JournalDataStore journalStore = new JournalDataStore(dataDir);
       return new JournalIterator<JournalDataRecord>(journalStore, 2048);
-   }
-
-   public static DefaultTreeModel emptyLogTreeModel()
-   {
-      return new DefaultTreeModel(new DefaultMutableTreeNode("log root"));
    }
 
    public DefaultTreeModel getLogListModel()

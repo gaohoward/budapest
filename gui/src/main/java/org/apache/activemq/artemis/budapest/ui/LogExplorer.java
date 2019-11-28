@@ -44,12 +44,14 @@ public class LogExplorer implements ClipboardOwner
    private KeywordDecorator decorator;
    private DataExplorationView owner;
    private String[] logSummary = new String[3];
+   private AbstractProject project;
 
    public LogExplorer(MainInstance instance, AbstractProject proj, int pageSize, int fontSize, DataExplorationView owner) throws Exception
    {
       this.instance = instance;
       projectModel = new DataProjectModel(pageSize, instance.getThreadPool());
       pageView = new JList<>();
+      this.project = proj;
 
       pageView.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
       logRenderer = new RichLogEntryRenderer(this, fontSize, projectModel);
@@ -165,6 +167,31 @@ public class LogExplorer implements ClipboardOwner
             }
          });
          popupMenu.add(newProjItem);
+
+         DataRecord first = selectedItems.get(0);
+         String[] actions = first.getExtraOps();
+         if (actions != null)
+         {
+            for (String a : actions)
+            {
+               JMenuItem item = new JMenuItem(a);
+               item.addActionListener(new ActionListener() {
+                  public void actionPerformed(ActionEvent e)
+                  {
+                     try
+                     {
+                        project.doAction(a, selectedItems);
+                     }
+                     catch (Exception e1)
+                     {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                     }
+                  }
+               });
+               popupMenu.add(item);
+            }
+         }
 
          if (!projectModel.isRootProject())
          {

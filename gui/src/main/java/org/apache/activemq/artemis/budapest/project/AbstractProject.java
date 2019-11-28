@@ -31,31 +31,39 @@ public abstract class AbstractProject
    protected DataWorkSpace workspace;
    protected String id;
    protected boolean opened;
+   protected boolean readOnly;
 
-   protected LinkedHashMap<String, AbstractProject> children = new LinkedHashMap<>();
+   private LinkedHashMap<String, AbstractProject> children = new LinkedHashMap<>();
 
    //for convenience of checking
    private Set<FilterString> filteredSet = new HashSet<>();
 
    protected DefaultTreeModel logTreeModel;
 
-   public AbstractProject(AbstractProject parent, String projectName, DataWorkSpace workspace)
-   {
-      this(parent, projectName, workspace, GeneralUtil.getTimeID());
-   }
-
    public AbstractProject(AbstractProject parent, String projectName, DataWorkSpace workspace, String projId)
-   {
-      this.parent = parent;
-      if (this.parent != null)
-      {
-         this.parent.addChild(this);
-      }
-      this.projectName = projectName;
-      this.workspace = workspace;
-      this.id = projId;
-      this.logTreeModel = new DefaultTreeModel(new DefaultMutableTreeNode(this));
-   }
+  {
+    this(parent,  projectName, workspace, projId, false);
+  }
+
+  public AbstractProject(AbstractProject parent, String projectName, DataWorkSpace workspace, String projId, boolean readOnly)
+  {
+    this.parent = parent;
+    if (this.parent != null)
+    {
+      //directly access children rather than call addChild()
+      //because it'll be troublesome if addChild() is overriden
+      //not so good doing it in constructor (if addChild() is
+      //overriden in this class and it's called from parent,
+      //and if it accesses this class' member field, the field
+      //may not be initiated thus null.
+      this.parent.children.put(this.getID(), this);
+    }
+    this.projectName = projectName;
+    this.workspace = workspace;
+    this.id = projId == null ? GeneralUtil.getTimeID() : projId;
+    this.logTreeModel = new DefaultTreeModel(new DefaultMutableTreeNode(this));
+    this.readOnly = readOnly;
+  }
 
    public void close()
    {
@@ -104,13 +112,38 @@ public abstract class AbstractProject
       return projectName;
    }
 
-   public void delete() throws IOException
+   public void delete() throws Exception
    {
-      logger.debug("deleteing me: {}", projectName);
-      workspace.deleteProject(this);
+      if (parent == null)
+      {
+         workspace.deleteProject(this);
+      }
+      else
+      {
+         logger.debug("I've parent, let it do delete");
+         parent.deleteChild(this);
+      }
    }
 
-   public abstract JournalIterator<? extends DataRecord> iterator() throws IOException;
+   public void deleteChild(AbstractProject child) throws Exception
+   {
+      logger.debug("deleting my child: {}", child.getID());
+      AbstractProject toRemove = children.remove(child.getID());
+
+      if (toRemove != null)
+      {
+         toRemove.doDelete();
+      }
+      else
+      {
+         logger.warn("no such child!, {}", children);
+      }
+   }
+
+   public JournalIterator<? extends DataRecord> iterator() throws IOException
+   {
+      return null;
+   }
 
    public AbstractProject createQueryLog(int type, String value, LogExplorer logExplorer)
    {
@@ -141,6 +174,8 @@ public abstract class AbstractProject
       return logTreeModel;
    }
 
+   //not this method can be overriden
+   //as long as it's not called from constructor.
    public void addChild(AbstractProject child)
    {
       children.put(child.getID(), child);
@@ -171,7 +206,7 @@ public abstract class AbstractProject
       projectElem.setAttribute(ConfigHelper.KEY_PARENT, parent == null ? "" : parent.getID());
    }
 
-   public void doDelete()
+   public void doDelete() throws Exception
    {
       logger.debug("Now real deleting {}", id);
       close();
@@ -189,6 +224,16 @@ public abstract class AbstractProject
 
       logger.debug("project deleted ", id);
       workspace.eventHappened(new WorkspaceEvent(WorkspaceEvent.PROJECT_REMOVED, this));
+   }
+
+   public void doAction(String action, Object data) throws Exception
+   {
+      throw new IllegalStateException("NO action defined for " + this);
+   }
+
+   public boolean isReadOnly()
+   {
+      return readOnly;
    }
 
 }

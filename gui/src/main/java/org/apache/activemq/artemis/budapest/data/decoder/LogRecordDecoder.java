@@ -44,6 +44,7 @@ public class LogRecordDecoder implements JournalRecordDecoder<DataRecord>
       try
       {
          Bookmark position = stream.getCurrentPosition();
+         LogFile currentFile = (LogFile) stream.getCurrentFile();
 
          if (position.isBegin()) {
             //some malformated file (like contains single CR(0D) char) can disrupt the flag
@@ -94,7 +95,7 @@ public class LogRecordDecoder implements JournalRecordDecoder<DataRecord>
             return null;
          }
          //to do : support different encoding.
-         DataRecord record = new DataRecord(sb.toString(), (LogFile)stream.getCurrentFile(), position);
+         DataRecord record = new DataRecord(sb.toString(), currentFile, position);
          return record;
       }
       catch (IOException e)

@@ -12,6 +12,7 @@ public class UserEvent
    public static final int GOTO_LINE = 6;
    public static final int UPDATE_STATUS = 7;
    public static final int GOTO_PARENT_LINE = 8;
+   public static final int TO_PROJECT = 9;
 
    private Object eventSource;
    private int eventType;

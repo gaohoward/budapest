@@ -23,7 +23,7 @@ public class ArtemisDataProject extends BaseDataProject
 
    public ArtemisDataProject(String id, String prjName, DataWorkSpace workspace, File baseDir, boolean isArtemisInstance)
    {
-      super(null, prjName, workspace, baseDir, id);
+      super(null, prjName, workspace, baseDir, id, true);
       this.isArtemisInstance = isArtemisInstance;
 
       this.dataTreeModel = new DefaultTreeModel(new DefaultMutableTreeNode(this));
@@ -59,14 +59,18 @@ public class ArtemisDataProject extends BaseDataProject
       if (isArtemisInstance)
       {
          workspace.createJournalProject(this, new File(dataDir, "data/journal"));
-         workspace.createBindingsProject(this, new File(dataDir, "data/bindings"));
+         BindingsProject bindingProj = workspace.createBindingsProject(this, new File(dataDir, "data/bindings"));
+         workspace.createCoreBindingsProject(bindingProj, new File(dataDir, "data/bindings"));
+         workspace.createJmsBindingsProject(bindingProj, new File(dataDir, "data/bindings"));
          workspace.createPagingProject(this, new File(dataDir, "data/paging"));
          workspace.createLargeMessageProject(this, new File(dataDir, "data/large-messages"));
       }
       else
       {
          workspace.createJournalProject(this, new File(dataDir, "journal"));
-         workspace.createBindingsProject(this, new File(dataDir, "bindings"));
+         BindingsProject bindingProj = workspace.createBindingsProject(this, new File(dataDir, "bindings"));
+         workspace.createCoreBindingsProject(bindingProj, new File(dataDir, "bindings"));
+         workspace.createJmsBindingsProject(bindingProj, new File(dataDir, "bindings"));
          workspace.createPagingProject(this, new File(dataDir, "paging"));
          workspace.createLargeMessageProject(this, new File(dataDir, "large-messages"));
       }

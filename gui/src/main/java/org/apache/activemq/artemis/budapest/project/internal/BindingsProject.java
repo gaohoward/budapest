@@ -12,7 +12,7 @@ public class BindingsProject extends BaseDataProject
 
    public BindingsProject(ArtemisDataProject parent, DataWorkSpace workspace, File file)
    {
-      super(parent, "Bindings", workspace, file);
+      super(parent, "Bindings", workspace, file, true);
    }
 
    @Override
@@ -22,10 +22,9 @@ public class BindingsProject extends BaseDataProject
    }
 
    @Override
-   public JournalIterator<? extends DataRecord> iterator() throws IOException
+   public boolean supportIteration()
    {
-      // TODO Auto-generated method stub
-      return null;
+      return false;
    }
 
 }

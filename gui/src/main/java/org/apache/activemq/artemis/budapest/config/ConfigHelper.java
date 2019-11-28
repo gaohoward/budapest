@@ -64,6 +64,7 @@ public class ConfigHelper implements WorkspaceEventListener
    public static final String KEY_ISARTEMISINSTANCE = "is-artemis-instance";
    public static final String KEY_FILTER_TYPE = "filter-type";
    public static final String KEY_FILTER_VALUE = "filter-value";
+   public static final String KEY_FILE = "file";
 
    private MainConfig config;
    private Element rootElem;

@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 public class DataRecord
 {
-   private static final Logger logger = LoggerFactory.getLogger(DataRecord.class);
+   protected static final Logger logger = LoggerFactory.getLogger(DataRecord.class);
 
    private static final int MAX_DISPLAY_LEN = 2048;
    protected String record;
@@ -111,5 +111,10 @@ public class DataRecord
    public String getPosition()
    {
       return this.sourceFile.getFile().getName() + " at " + this.position;
+   }
+
+   public String[] getExtraOps()
+   {
+      return null;
    }
 }
